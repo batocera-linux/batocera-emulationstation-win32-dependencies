@@ -3,7 +3,7 @@
  *****************************************************************************
  * Copyright (C) 1999-2010 VLC authors and VideoLAN
  * Copyright (C) 2004-2005 M2X
- * $Id: 74d79379258cf0af1cdafcd45946c7b4cf23b01f $
+ * $Id$
  *
  * Authors: Jean-Paul Saman <jpsaman #_at_# m2x dot nl>
  *          Gildas Bazin <gbazin@videolan.org>
@@ -26,11 +26,17 @@
 #ifndef VLC_VOUT_OSD_H
 #define VLC_VOUT_OSD_H 1
 
-#include <vlc_spu.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup osd On-screen display
+ * \ingroup spu
+ * @{
+ * \file
+ * Overlay text and widgets
+ */
 
 /**
  * OSD menu position and picture type defines
@@ -47,9 +53,6 @@ enum
     OSD_VERT_SLIDER,
 };
 
-/**********************************************************************
- * Vout text and widget overlays
- **********************************************************************/
 VLC_API int vout_OSDEpg( vout_thread_t *, input_item_t * );
 
 /**
@@ -60,7 +63,7 @@ VLC_API int vout_OSDEpg( vout_thread_t *, input_item_t * );
  * \param duration Duration of the text being displayed
  * \param text Text to be displayed
  */
-VLC_API void vout_OSDText( vout_thread_t *vout, int channel, int position, mtime_t duration, const char *text );
+VLC_API void vout_OSDText( vout_thread_t *vout, int channel, int position, vlc_tick_t duration, const char *text );
 
 /**
  * \brief Write an informative message at the default location,
@@ -90,6 +93,7 @@ VLC_API void vout_OSDSlider( vout_thread_t *, int, int , short );
  */
 VLC_API void vout_OSDIcon( vout_thread_t *, int, short );
 
+/** @} */
 #ifdef __cplusplus
 }
 #endif

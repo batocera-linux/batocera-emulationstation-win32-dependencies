@@ -1,8 +1,8 @@
 /*****************************************************************************
- * vlc_keys.h: keycode defines
+ * vlc_actions.h: handle vlc actions
  *****************************************************************************
- * Copyright (C) 2003-2009 VLC authors and VideoLAN
- * $Id: 49edab323f602e2149b6371bdb3b3277732b9cc0 $
+ * Copyright (C) 2003-2016 VLC authors and VideoLAN
+ * $Id$
  *
  * Authors: Sigmund Augdal Helberg <dnumgis@videolan.org>
  *
@@ -21,8 +21,16 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#ifndef VLC_KEYS_H
-#define VLC_KEYS_H 1
+#ifndef VLC_ACTIONS_H
+#define VLC_ACTIONS_H 1
+
+/* Called from src/libvlc.c */
+int
+libvlc_InternalActionsInit(libvlc_int_t *p_libvlc);
+
+/* Called from src/libvlc.c */
+void
+libvlc_InternalActionsClean(libvlc_int_t *p_libvlc);
 
 /**
  * \file
@@ -109,7 +117,7 @@
 VLC_API char *vlc_keycode2str(uint_fast32_t i_key, bool locale) VLC_USED;
 VLC_API uint_fast32_t vlc_str2keycode(const char *str) VLC_USED;
 
-typedef enum vlc_action {
+typedef enum vlc_action_id {
     ACTIONID_NONE = 0,
     ACTIONID_QUIT,
     ACTIONID_PLAY_PAUSE,
@@ -171,8 +179,12 @@ typedef enum vlc_action {
     ACTIONID_SUBPOS_UP,
     ACTIONID_SUBPOS_DOWN,
     ACTIONID_AUDIO_TRACK,
+    ACTIONID_SUBTITLE_REVERSE_TRACK,
     ACTIONID_SUBTITLE_TRACK,
     ACTIONID_SUBTITLE_TOGGLE,
+    ACTIONID_SUBTITLE_TEXT_SCALE_NORMAL,
+    ACTIONID_SUBTITLE_TEXT_SCALE_UP,
+    ACTIONID_SUBTITLE_TEXT_SCALE_DOWN,
     ACTIONID_INTF_TOGGLE_FSC,
     ACTIONID_INTF_HIDE,
     ACTIONID_INTF_BOSS,
@@ -224,14 +236,40 @@ typedef enum vlc_action {
     ACTIONID_PROGRAM_SID_NEXT,
     ACTIONID_PROGRAM_SID_PREV,
     ACTIONID_INTF_POPUP_MENU,
+    /* Viewpoint */
+    ACTIONID_VIEWPOINT_FOV_IN,
+    ACTIONID_VIEWPOINT_FOV_OUT,
+    ACTIONID_VIEWPOINT_ROLL_CLOCK,
+    ACTIONID_VIEWPOINT_ROLL_ANTICLOCK,
+    /* Combo Actions */
+    ACTIONID_COMBO_VOL_FOV_UP,
+    ACTIONID_COMBO_VOL_FOV_DOWN,
 
-} vlc_action_t;
+} vlc_action_id_t;
 
-VLC_API vlc_action_t vlc_GetActionId(const char *psz_key) VLC_USED;
+/**
+ * Get the action ID from an action key name
+ * \return the action ID or ACTIONID_NONE on error.
+ */
+VLC_API vlc_action_id_t
+vlc_actions_get_id(const char *psz_key_name);
 
-struct hotkey
-{
-    const char *psz_action;
-};
+/**
+ * Get keycodes from a action key name and vlc configuration
+ * \return The number of keycodes for this action, or 0 in case of an error.
+ * The list needs to be released with free()
+ */
+VLC_API size_t
+vlc_actions_get_keycodes(vlc_object_t *p_obj, const char *psz_key_name,
+                        bool b_global, uint_fast32_t **pp_keycodes );
+#define vlc_actions_get_keycodes(a, b, c, d) vlc_actions_get_keycodes(VLC_OBJECT(a), b, c, d)
+
+/**
+ * Get a list a key names
+ * \return A NULL terminated list of const char *
+ */
+VLC_API const char* const*
+vlc_actions_get_key_names(vlc_object_t *p_obj);
+#define vlc_actions_get_key_names(x) vlc_actions_get_key_names(VLC_OBJECT(x))
 
 #endif

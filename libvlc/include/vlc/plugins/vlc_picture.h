@@ -2,7 +2,7 @@
  * vlc_picture.h: picture definitions
  *****************************************************************************
  * Copyright (C) 1999 - 2009 VLC authors and VideoLAN
- * $Id: dea3f7f0c608416e89b75197430dd66db61e0639 $
+ * $Id$
  *
  * Authors: Vincent Seguin <seguin@via.ecp.fr>
  *          Samuel Hocevar <sam@via.ecp.fr>
@@ -32,7 +32,6 @@
  */
 
 #include <vlc_es.h>
-#include <vlc_atomic.h>
 
 /** Description of a planar graphic field */
 typedef struct plane_t
@@ -57,11 +56,11 @@ typedef struct plane_t
  */
 #define PICTURE_PLANE_MAX (VOUT_MAX_PLANES)
 
-
-/**
- * A private definition to help overloading picture release
- */
-typedef struct picture_gc_sys_t picture_gc_sys_t;
+typedef struct picture_context_t
+{
+    void (*destroy)(struct picture_context_t *);
+    struct picture_context_t *(*copy)(struct picture_context_t *);
+} picture_context_t;
 
 /**
  * Video picture
@@ -80,7 +79,7 @@ struct picture_t
      * These properties can be modified using the video output thread API,
      * but should never be written directly */
     /**@{*/
-    mtime_t         date;                                  /**< display date */
+    vlc_tick_t      date;                                  /**< display date */
     bool            b_force;
     /**@}*/
 
@@ -91,25 +90,12 @@ struct picture_t
     bool            b_progressive;          /**< is it a progressive frame ? */
     bool            b_top_field_first;             /**< which field is first */
     unsigned int    i_nb_fields;                  /**< # of displayed fields */
-    void          * context;          /**< video format-specific data pointer,
-             * must point to a (void (*)(void*)) pointer to free the context */
+    picture_context_t *context;      /**< video format-specific data pointer */
     /**@}*/
 
     /** Private data - the video output plugin might want to put stuff here to
      * keep track of the picture */
     picture_sys_t * p_sys;
-
-    /** This way the picture_Release can be overloaded */
-    struct
-    {
-#if (defined (__LIBVLC__) && !defined (__PLUGIN__))
-        atomic_uintptr_t refcount;
-#else
-        uintptr_t refcount_placeholder_keep_off;
-#endif
-        void (*pf_destroy)( picture_t * );
-        picture_gc_sys_t *p_sys;
-    } gc;
 
     /** Next picture in a FIFO a pictures */
     struct picture_t *p_next;
@@ -173,14 +159,6 @@ VLC_API picture_t *picture_Hold( picture_t *p_picture );
 VLC_API void picture_Release( picture_t *p_picture );
 
 /**
- * This function will return true if you are not the only owner of the
- * picture.
- *
- * It is only valid if it is created using picture_New.
- */
-VLC_API bool picture_IsReferenced( picture_t *p_picture );
-
-/**
  * This function will copy all picture dynamic properties.
  */
 VLC_API void picture_CopyProperties( picture_t *p_dst, const picture_t *p_src );
@@ -209,6 +187,17 @@ VLC_API void plane_CopyPixels( plane_t *p_dst, const plane_t *p_src );
  * \param p_src pointer to the source picture.
  */
 VLC_API void picture_Copy( picture_t *p_dst, const picture_t *p_src );
+
+/**
+ * Perform a shallow picture copy
+ *
+ * This function makes a shallow copy of an existing picture. The same planes
+ * and resources will be used, and the cloned picture reference count will be
+ * incremented.
+ *
+ * \return A clone picture on success, NULL on error.
+ */
+VLC_API picture_t *picture_Clone(picture_t *pic);
 
 /**
  * This function will export a picture to an encoded bitstream.
@@ -240,19 +229,6 @@ VLC_API int picture_Export( vlc_object_t *p_obj, block_t **pp_image, video_forma
  * It can be useful to get the properties of planes.
  */
 VLC_API int picture_Setup( picture_t *, const video_format_t * );
-
-
-/**
- * This function will blend a given subpicture onto a picture.
- *
- * The subpicture and all its region must:
- *  - be absolute.
- *  - not be ephemere.
- *  - not have the fade flag.
- *  - contains only picture (no text rendering).
- * \return the number of region(s) succesfully blent
- */
-VLC_API unsigned picture_BlendSubpicture( picture_t *, filter_t *p_blend, subpicture_t * );
 
 
 /*****************************************************************************
